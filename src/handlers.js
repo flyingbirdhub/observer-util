@@ -22,11 +22,13 @@ function get (target, key, receiver) {
     return result
   }
   // register and save (observable.prop -> runningReaction)
+  // 依赖收集
   registerRunningReactionForOperation({ target, key, receiver, type: 'get' })
   // if we are inside a reaction and observable.prop is an object wrap it in an observable too
   // this is needed to intercept property access on that object too (dynamic observable tree)
   const observableResult = rawToProxy.get(result)
   if (hasRunningReaction() && typeof result === 'object' && result !== null) {
+    // 表示这个对象已经被proxy过了
     if (observableResult) {
       return observableResult
     }
@@ -37,6 +39,8 @@ function get (target, key, receiver) {
       !descriptor ||
       !(descriptor.writable === false && descriptor.configurable === false)
     ) {
+      // 对于对象类型，递归处理，包括Object/Array
+      // 对象是拉平存储的connectionStore对象上的，而不是一个树结构
       return observable(result)
     }
   }
@@ -60,6 +64,7 @@ function ownKeys (target) {
 function set (target, key, value, receiver) {
   // make sure to do not pollute the raw object with observables
   if (typeof value === 'object' && value !== null) {
+    // 避免设置的value是一个proxy对象
     value = proxyToRaw.get(value) || value
   }
   // save if the object had a descriptor for this key
@@ -70,6 +75,7 @@ function set (target, key, value, receiver) {
   const result = Reflect.set(target, key, value, receiver)
   // do not queue reactions if the target of the operation is not the raw receiver
   // (possible because of prototypal inheritance)
+  // 由于JS动态的特性：参考MDN https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Proxy/Proxy/set
   if (target !== proxyToRaw.get(receiver)) {
     return result
   }
@@ -77,6 +83,7 @@ function set (target, key, value, receiver) {
   if (!hadKey) {
     queueReactionsForOperation({ target, key, value, receiver, type: 'add' })
   } else if (value !== oldValue) {
+    // 值变化后进行更新
     queueReactionsForOperation({
       target,
       key,

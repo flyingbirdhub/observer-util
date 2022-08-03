@@ -39,6 +39,7 @@ export function registerRunningReactionForOperation (operation) {
   const runningReaction = reactionStack[reactionStack.length - 1]
   if (runningReaction) {
     debugOperation(runningReaction, operation)
+    // 给当前运行的Reaction添加依赖对象operation
     registerReactionForOperation(runningReaction, operation)
   }
 }

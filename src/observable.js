@@ -13,6 +13,7 @@ export function observable (obj = {}) {
   return rawToProxy.get(obj) || createObservable(obj)
 }
 
+// 似乎并没有提供删除Observable对象的方法
 function createObservable (obj) {
   // if it is a complex built-in object or a normal object, wrap it
   const handlers = builtIns.getHandlers(obj) || baseHandlers
